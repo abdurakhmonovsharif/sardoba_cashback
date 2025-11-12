@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app_localizations.dart';
 import '../../constants.dart';
 import '../../services/auth_storage.dart';
 import '../onboarding/onboarding_scrreen.dart';
@@ -40,8 +41,9 @@ class _PinLockScreenState extends State<PinLockScreen> {
     if (isValid) {
       widget.onUnlocked(context);
     } else {
+      final l10n = AppLocalizations.of(context);
       setState(() {
-        _error = 'Incorrect PIN, try again';
+        _error = l10n.pinLockError;
         _currentPin = '';
         _isVerifying = false;
       });
@@ -68,6 +70,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFFBF7F2),
       body: SafeArea(
@@ -81,7 +84,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
                   size: 52, color: primaryColor),
               const SizedBox(height: 18),
               Text(
-                'Enter your PIN',
+                l10n.pinLockTitle,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleLarge?.copyWith(
                   color: titleColor,
@@ -90,7 +93,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Unlock Sardoba to continue',
+                l10n.pinLockSubtitle,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: titleColor.withValues(alpha: 0.6),
@@ -123,7 +126,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
                   foregroundColor: primaryColor,
                   textStyle: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                child: const Text('Switch account'),
+                child: Text(l10n.pinSwitchAccount),
               ),
             ],
           ),

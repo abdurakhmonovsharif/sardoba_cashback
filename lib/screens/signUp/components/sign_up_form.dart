@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../app_localizations.dart';
 import '../../../components/buttons/primary_button.dart';
 import '../../../constants.dart';
 import '../../../entry_point.dart';
-import '../../../models/account.dart';
 import '../../../services/auth_storage.dart';
+import '../../../services/auth_service.dart';
 import '../../phoneLogin/number_verify_screen.dart';
 
 class SignUpForm extends StatefulWidget {
@@ -26,6 +27,8 @@ class _SignUpFormState extends State<SignUpForm>
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _referralController = TextEditingController();
+  DateTime? _selectedDob;
+  String? _dobError;
 
   @override
   void initState() {
@@ -40,6 +43,27 @@ class _SignUpFormState extends State<SignUpForm>
     _phoneController.dispose();
     _referralController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickDob() async {
+    final l10n = AppLocalizations.of(context);
+    final now = DateTime.now();
+    final approx = DateTime(now.year - 18, now.month, now.day);
+    final initial = _selectedDob ??
+        (approx.isBefore(DateTime(1900)) ? DateTime(1900) : approx);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial.isAfter(now) ? now : initial,
+      firstDate: DateTime(1900),
+      lastDate: now,
+      helpText: l10n.authDobLabel,
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDob = picked;
+        _dobError = null;
+      });
+    }
   }
 
   void _handlePhoneChanged() {
@@ -103,11 +127,15 @@ class _SignUpFormState extends State<SignUpForm>
   }
 
   Future<void> _handleSubmit() async {
+    final l10n = AppLocalizations.of(context);
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_selectedDob == null) {
+      setState(() => _dobError = l10n.authDobValidation);
+      return;
+    }
 
     setState(() => _isSubmitting = true);
     final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     final storage = AuthStorage.instance;
     final name = _nameController.text.trim();
     final phoneRaw = _phoneController.text;
@@ -116,23 +144,6 @@ class _SignUpFormState extends State<SignUpForm>
         ? null
         : _referralController.text.trim();
 
-    final exists = await storage.accountExists(normalizedPhone);
-    if (!mounted) return;
-    if (exists) {
-      setState(() => _isSubmitting = false);
-      messenger.showSnackBar(
-        const SnackBar(
-            content: Text('An account with this phone already exists')),
-      );
-      return;
-    }
-
-    final account = Account(
-      name: name,
-      phone: normalizedPhone,
-      referralCode: referral,
-    );
-
     if (!mounted) return;
     setState(() => _isSubmitting = false);
     navigator.push(
@@ -140,18 +151,47 @@ class _SignUpFormState extends State<SignUpForm>
         builder: (_) => NumberVerifyScreen(
           phone: normalizedPhone,
           displayPhone: phoneRaw,
-          expectedCode: '1234',
-          onVerified: (ctx) async {
-            final innerNavigator = Navigator.of(ctx);
-            await storage.upsertAccount(
-              account.copyWith(isVerified: true),
-            );
-            await storage.setCurrentUser(normalizedPhone);
-            if (!innerNavigator.mounted) return;
-            innerNavigator.pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const EntryPoint()),
-              (_) => false,
-            );
+          demoCode: '1234',
+          onVerified: (ctx, code) async {
+            final messenger = ScaffoldMessenger.of(ctx);
+            final localL10n = AppLocalizations.of(ctx);
+            final authService = AuthService();
+            try {
+              final session = await authService.verifyOtp(
+                phone: normalizedPhone,
+                code: code,
+                name: name,
+                purpose: 'register',
+                waiterReferralCode: referral,
+                dateOfBirth: _selectedDob,
+              );
+              await storage.upsertAccount(
+                session.account.copyWith(isVerified: true),
+              );
+              await storage.setCurrentUser(session.account.phone);
+              await storage.saveAuthTokens(
+                accessToken: session.accessToken,
+                refreshToken: session.refreshToken,
+                tokenType: session.tokenType,
+              );
+              if (!ctx.mounted) return false;
+              final innerNavigator = Navigator.of(ctx);
+              innerNavigator.pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const EntryPoint()),
+                (_) => false,
+              );
+              return true;
+            } on AuthServiceException catch (error) {
+              messenger.showSnackBar(SnackBar(content: Text(error.message)));
+              return false;
+            } catch (error) {
+              messenger.showSnackBar(
+                SnackBar(content: Text(localL10n.commonErrorTryAgain)),
+              );
+              return false;
+            } finally {
+              authService.dispose();
+            }
           },
         ),
       ),
@@ -160,6 +200,7 @@ class _SignUpFormState extends State<SignUpForm>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final labelStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: titleColor.withValues(alpha: 0.8),
               fontWeight: FontWeight.w600,
@@ -175,16 +216,16 @@ class _SignUpFormState extends State<SignUpForm>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel("Enter your name", labelStyle),
+          _buildLabel(l10n.authEnterName, labelStyle),
           const SizedBox(height: 8),
           TextFormField(
             controller: _nameController,
             validator: requiredValidator.call,
             textInputAction: TextInputAction.next,
-            decoration: _buildInputDecoration("Saidmurod"),
+            decoration: _buildInputDecoration(l10n.authNameHint),
           ),
           const SizedBox(height: 16),
-          _buildLabel("Enter your phone", labelStyle),
+          _buildLabel(l10n.authEnterPhone, labelStyle),
           const SizedBox(height: 8),
           TextFormField(
             validator: phoneNumberValidator.call,
@@ -196,7 +237,7 @@ class _SignUpFormState extends State<SignUpForm>
               FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]')),
             ],
             decoration: _buildInputDecoration(
-              "+998 91 123 54 56",
+              l10n.authPhoneHint,
               suffix: AnimatedSwitcher(
                 duration: kDefaultDuration,
                 transitionBuilder: (child, animation) => ScaleTransition(
@@ -216,9 +257,22 @@ class _SignUpFormState extends State<SignUpForm>
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          _buildLabel('${l10n.authDobLabel} *', labelStyle),
+          const SizedBox(height: 8),
+          _buildDobSelector(l10n),
+          if (_dobError != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              _dobError!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.redAccent,
+                  ),
+            ),
+          ],
           const SizedBox(height: 24),
           Text(
-            'We will send a 4-digit code to confirm your number.',
+            l10n.authOtpInfoRegister,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: bodyTextColor.withValues(alpha: 0.7),
                 ),
@@ -256,9 +310,9 @@ class _SignUpFormState extends State<SignUpForm>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    "Affitsant referral code",
-                    style: TextStyle(
+                  Text(
+                    l10n.authReferralToggle,
+                    style: const TextStyle(
                       color: titleColor,
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
@@ -288,7 +342,7 @@ class _SignUpFormState extends State<SignUpForm>
                       TextFormField(
                         controller: _referralController,
                         decoration:
-                            _buildInputDecoration("Enter referral code"),
+                            _buildInputDecoration(l10n.authReferralHint),
                       ),
                     ],
                   )
@@ -296,11 +350,50 @@ class _SignUpFormState extends State<SignUpForm>
           ),
           const SizedBox(height: 22),
           PrimaryButton(
-            text: 'Continue',
+            text: l10n.authContinue,
             isLoading: _isSubmitting,
             press: _handleSubmit,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDobSelector(AppStrings l10n) {
+    final hasValue = _selectedDob != null;
+    final text =
+        hasValue ? l10n.formatDateDdMMyyyy(_selectedDob!) : l10n.authDobHint;
+    final borderColor =
+        _dobError != null ? Colors.redAccent : Colors.transparent;
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: _pickDob,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF6F8FC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: borderColor),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                text,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: hasValue ? titleColor : bodyTextColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.calendar_today_rounded,
+              size: 18,
+              color: (hasValue ? titleColor : bodyTextColor)
+                  .withValues(alpha: 0.8),
+            ),
+          ],
+        ),
       ),
     );
   }

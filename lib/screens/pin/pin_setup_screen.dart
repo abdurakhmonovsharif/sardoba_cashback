@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app_localizations.dart';
 import '../../constants.dart';
 import '../../services/auth_storage.dart';
 import 'components/pin_widgets.dart';
@@ -54,8 +55,9 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
     }
 
     if (_firstPin != _currentPin) {
+      final l10n = AppLocalizations.of(context);
       setState(() {
-        _error = 'PIN codes do not match, please try again';
+        _error = l10n.pinSetupMismatch;
         _currentPin = '';
         _firstPin = null;
         _step = _PinStep.enter;
@@ -72,7 +74,13 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final isConfirm = _step == _PinStep.confirm;
+    final title =
+        isConfirm ? l10n.pinSetupConfirmTitle : l10n.pinSetupCreateTitle;
+    final subtitle = isConfirm
+        ? l10n.pinSetupConfirmSubtitle
+        : l10n.pinSetupCreateSubtitle;
     return Scaffold(
       backgroundColor: const Color(0xFFFBF7F2),
       body: SafeArea(
@@ -85,7 +93,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
               const Icon(Icons.shield_outlined, size: 52, color: primaryColor),
               const SizedBox(height: 18),
               Text(
-                isConfirm ? 'Confirm your PIN' : 'Create a new PIN',
+                title,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleLarge?.copyWith(
                   color: titleColor,
@@ -94,9 +102,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                isConfirm
-                    ? 'Re-enter the PIN to continue'
-                    : 'Use a 4-digit code to secure your account',
+                subtitle,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: titleColor.withValues(alpha: 0.6),
@@ -138,7 +144,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
                   foregroundColor: primaryColor,
                   textStyle: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                child: Text(isConfirm ? 'Start over' : 'Clear'),
+                child: Text(isConfirm ? l10n.pinSetupReset : l10n.pinSetupClear),
               ),
             ],
           ),

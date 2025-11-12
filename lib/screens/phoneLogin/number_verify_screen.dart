@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../components/welcome_text.dart';
 import '../../constants.dart';
+import '../../services/auth_service.dart';
 import 'components/otp_form.dart';
 
 class NumberVerifyScreen extends StatelessWidget {
@@ -10,18 +11,18 @@ class NumberVerifyScreen extends StatelessWidget {
     super.key,
     required this.phone,
     required this.onVerified,
-    this.expectedCode = '1234',
     this.displayPhone,
     this.title,
     this.subtitle,
+    this.demoCode,
   });
 
   final String phone;
-  final Future<void> Function(BuildContext context) onVerified;
-  final String expectedCode;
+  final Future<bool> Function(BuildContext context, String code) onVerified;
   final String? displayPhone;
   final String? title;
   final String? subtitle;
+  final String? demoCode;
 
   @override
   Widget build(BuildContext context) {
@@ -38,21 +39,39 @@ class NumberVerifyScreen extends StatelessWidget {
               WelcomeText(
                 title: title ?? 'Confirm your code',
                 text: subtitle ??
-                    'Enter the 4-digit code sent to ${displayPhone ?? '+$phone'}.'
-                        '\nUse code $expectedCode to continue.',
+                    _buildDefaultSubtitle(displayPhone ?? '+$phone', demoCode),
               ),
 
               // OTP form
               OtpForm(
                 onSubmit: (code) async {
-                  if (code == expectedCode) {
-                    await onVerified(context);
-                    return true;
+                  try {
+                    final success = await onVerified(context, code);
+                    if (!success && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Could not verify the code.'),
+                        ),
+                      );
+                    }
+                    return success;
+                  } on AuthServiceException catch (error) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(error.message)),
+                      );
+                    }
+                    return false;
+                  } catch (error) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Something went wrong. Try again.'),
+                        ),
+                      );
+                    }
+                    return false;
                   }
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Incorrect code, try again.')),
-                  );
-                  return false;
                 },
               ),
               const SizedBox(height: defaultPadding),
@@ -91,4 +110,14 @@ class NumberVerifyScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+String _buildDefaultSubtitle(String phoneLabel, String? demoCode) {
+  final buffer = StringBuffer(
+    'Enter the 4-digit code sent to $phoneLabel.',
+  );
+  if (demoCode != null && demoCode.isNotEmpty) {
+    buffer.write('\nUse code $demoCode to continue.');
+  }
+  return buffer.toString();
 }

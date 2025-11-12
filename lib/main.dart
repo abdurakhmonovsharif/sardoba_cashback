@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app_language.dart';
 import 'app_localizations.dart';
 import 'constants.dart';
 import 'entry_point.dart';
+import 'navigation/app_navigator.dart';
 import 'screens/onboarding/onboarding_scrreen.dart';
 import 'screens/onboarding/splash_screen.dart';
 import 'screens/pin/pin_lock_screen.dart';
+import 'services/auth_service.dart';
 import 'services/auth_storage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AuthStorage.instance.ensureInitialized();
-  await dotenv.load(fileName: ".env");
   runApp(const MyApp());
 }
 
@@ -35,13 +36,64 @@ class _MyAppState extends State<MyApp> {
     final storage = AuthStorage.instance;
     final hasUser = await storage.hasCurrentUser();
     if (!hasUser) return _AppStartDestination.onboarding;
+    await _syncCurrentAccount(storage);
     final hasPin = await storage.hasPin();
     return hasPin ? _AppStartDestination.pin : _AppStartDestination.entry;
   }
 
+  Future<void> _syncCurrentAccount(AuthStorage storage) async {
+    final accessToken = await storage.getAccessToken();
+    if (accessToken == null || accessToken.isEmpty) return;
+    final tokenType = await storage.getTokenType();
+    final currentPhone = await storage.getCurrentUser();
+    final authService = AuthService();
+    try {
+      final account = await authService.fetchProfileWithToken(
+        accessToken: accessToken,
+        tokenType: tokenType,
+        fallbackPhone: currentPhone,
+      );
+      if (account == null) return;
+      await storage.upsertAccount(account.copyWith(isVerified: true));
+      if (currentPhone == null || currentPhone.isEmpty) {
+        await storage.setCurrentUser(account.phone);
+      }
+    } on AuthUnauthorizedException {
+      final refreshed = await storage.refreshTokens();
+      if (!refreshed) {
+        await AppNavigator.forceLogout();
+      } else {
+        final newToken = await storage.getAccessToken();
+        final newType = await storage.getTokenType();
+        if (newToken == null || newToken.isEmpty) {
+          await AppNavigator.forceLogout();
+        } else {
+          try {
+            final account = await authService.fetchProfileWithToken(
+              accessToken: newToken,
+              tokenType: newType,
+              fallbackPhone: currentPhone,
+            );
+            if (account == null) return;
+            await storage.upsertAccount(account.copyWith(isVerified: true));
+            if (currentPhone == null || currentPhone.isEmpty) {
+              await storage.setCurrentUser(account.phone);
+            }
+          } on AuthUnauthorizedException {
+            await AppNavigator.forceLogout();
+          }
+        }
+      }
+    } catch (_) {
+      // Ignore other sync errors during app launch.
+    } finally {
+      authService.dispose();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final appName = dotenv.env['API_BASE_URL'];
+    const appName = 'Sardoba';
     return AnimatedBuilder(
       animation: _language,
       builder: (context, _) {
@@ -49,7 +101,8 @@ class _MyAppState extends State<MyApp> {
         return AppLocalizations(
           locale: locale,
           child: MaterialApp(
-            title: appName ?? 'Sardoba',
+            title: appName,
+            navigatorKey: AppNavigator.navigatorKey,
             locale: locale.flutterLocale,
             supportedLocales: const [Locale('ru'), Locale('uz')],
             localizationsDelegates: const [
@@ -59,6 +112,21 @@ class _MyAppState extends State<MyApp> {
             ],
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(seedColor: primaryColor),
+
+              // ✅ Add this block to fix status bar and app bar text color
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Colors.white,
+                elevation: 0,
+                iconTheme: IconThemeData(color: Colors.black),
+                titleTextStyle: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+                systemOverlayStyle:
+                    SystemUiOverlayStyle.dark, // 👈 black time & battery icons
+              ),
+
               elevatedButtonTheme: ElevatedButtonThemeData(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,
@@ -69,10 +137,12 @@ class _MyAppState extends State<MyApp> {
                   ),
                 ),
               ),
+
               textTheme: const TextTheme(
                 bodyMedium: TextStyle(color: bodyTextColor),
                 bodySmall: TextStyle(color: bodyTextColor),
               ),
+
               inputDecorationTheme: const InputDecorationTheme(
                 contentPadding: EdgeInsets.all(defaultPadding),
                 hintStyle: TextStyle(color: bodyTextColor),

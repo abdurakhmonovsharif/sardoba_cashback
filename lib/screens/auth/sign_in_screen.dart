@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../app_localizations.dart';
 import '../../constants.dart';
 import 'components/sign_in_form.dart';
 import 'sign_up_screen.dart';
@@ -12,6 +13,7 @@ class SignInScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final subtleTextStyle = theme.textTheme.bodyMedium?.copyWith(
           color: bodyTextColor,
           height: 1.4,
@@ -76,7 +78,7 @@ class SignInScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        "Enter your phone number to receive a verification code.",
+                        l10n.authSignInSubtitle,
                         textAlign: TextAlign.center,
                         style: subtleTextStyle,
                       ),
@@ -99,10 +101,10 @@ class SignInScreen extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                           fontSize: 14,
                         ),
-                    text: "Don’t have an account? ",
+                    text: '${l10n.authNoAccountQuestion} ',
                     children: <TextSpan>[
                       TextSpan(
-                        text: "Create new account",
+                        text: l10n.authCreateAccountCta,
                         style: const TextStyle(
                           color: primaryColor,
                           fontWeight: FontWeight.w600,

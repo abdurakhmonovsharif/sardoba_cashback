@@ -131,7 +131,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
+                    "Har bir taom — bu sayohat! Sardoba ta’mlari orqali yangi lazzatlarni kashf eting.",
                     style: theme.textTheme.bodyLarge?.copyWith(
                           color: Colors.white.withValues(alpha: 0.82),
                           height: 1.5,
@@ -185,11 +185,16 @@ class _SwipeToStartButtonState extends State<_SwipeToStartButton> {
       builder: (context, constraints) {
         final trackWidth = constraints.maxWidth;
         const knobSize = 58.0;
-        final maxOffset = (trackWidth - knobSize).clamp(0.0, double.infinity);
-        final knobOffset = maxOffset * widget.progress;
+        const sliderPadding = EdgeInsets.symmetric(horizontal: 4, vertical: 0);
+        final innerTrackWidth =
+            (trackWidth - sliderPadding.horizontal).clamp(0.0, double.infinity);
+        final maxOffset =
+            (innerTrackWidth - knobSize).clamp(0.0, double.infinity);
+        final knobOffset = maxOffset * widget.progress.clamp(0.0, 1.0);
 
         return Container(
           height: 66,
+          padding: sliderPadding,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(42),
@@ -201,8 +206,8 @@ class _SwipeToStartButtonState extends State<_SwipeToStartButton> {
               Center(
                 child: Text(
                   widget.progress >= 0.9
-                      ? 'Release to start'
-                      : 'Swipe to start',
+                      ? 'Oldinga'
+                      : 'Boshlash',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -224,7 +229,7 @@ class _SwipeToStartButtonState extends State<_SwipeToStartButton> {
                           final dx = details.localPosition.dx;
                           final delta = dx - (_lastLocalDx ?? dx);
                           _lastLocalDx = dx;
-                          if (maxOffset == 0) return;
+                          if (maxOffset <= 0) return;
                           widget.onProgressDragged(delta / maxOffset);
                         },
                   onHorizontalDragEnd: widget.isDisabled

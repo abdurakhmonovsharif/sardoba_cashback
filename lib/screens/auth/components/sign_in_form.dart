@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../app_localizations.dart';
 import '../../../components/buttons/primary_button.dart';
 import '../../../constants.dart';
 import '../../../entry_point.dart';
 import '../../../services/auth_storage.dart';
+import '../../../services/auth_service.dart';
 import '../../phoneLogin/number_verify_screen.dart';
 import '../../pin/pin_setup_screen.dart';
 
@@ -114,20 +116,10 @@ class _SignInFormState extends State<SignInForm> {
 
     setState(() => _isSubmitting = true);
     final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     final storage = AuthStorage.instance;
     final phoneRaw = _phoneController.text;
     final phone = storage.normalizePhone(phoneRaw);
-    final account = await storage.getAccount(phone);
     if (!mounted) return;
-
-    if (account == null) {
-      setState(() => _isSubmitting = false);
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Account not found. Please sign up.')),
-      );
-      return;
-    }
 
     setState(() => _isSubmitting = false);
     if (!mounted) return;
@@ -136,30 +128,65 @@ class _SignInFormState extends State<SignInForm> {
         builder: (_) => NumberVerifyScreen(
           phone: phone,
           displayPhone: phoneRaw,
-          onVerified: (ctx) async {
-            final innerNavigator = Navigator.of(ctx);
-            await storage.setCurrentUser(phone);
-            await storage.markVerified(phone);
-            final hasPin = await storage.hasPin();
-            if (!innerNavigator.mounted) return;
-            if (!hasPin) {
-              innerNavigator.pushReplacement(
-                MaterialPageRoute(
-                  builder: (_) => PinSetupScreen(
-                    onCompleted: (innerCtx) {
-                      Navigator.of(innerCtx).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const EntryPoint()),
-                        (_) => false,
-                      );
-                    },
+          onVerified: (ctx, code) async {
+            final messenger = ScaffoldMessenger.of(ctx);
+            final authService = AuthService();
+            try {
+              final session = await authService.verifyOtp(
+                phone: phone,
+                code: code,
+                purpose: 'login',
+              );
+              await storage.upsertAccount(
+                session.account.copyWith(isVerified: true),
+              );
+              await storage.setCurrentUser(session.account.phone);
+              await storage.saveAuthTokens(
+                accessToken: session.accessToken,
+                refreshToken: session.refreshToken,
+                tokenType: session.tokenType,
+              );
+              await storage.markVerified(session.account.phone);
+              final hasPin = await storage.hasPin();
+              if (!ctx.mounted) return false;
+              final innerNavigator = Navigator.of(ctx);
+              if (!innerNavigator.mounted) return false;
+              if (!hasPin) {
+                innerNavigator.pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => PinSetupScreen(
+                      onCompleted: (innerCtx) {
+                        Navigator.of(innerCtx).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (_) => const EntryPoint()),
+                          (_) => false,
+                        );
+                      },
+                    ),
                   ),
+                );
+              } else {
+                innerNavigator.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const EntryPoint()),
+                  (_) => false,
+                );
+              }
+              return true;
+            } on AuthUnauthorizedException catch (error) {
+              await storage.logout();
+              messenger.showSnackBar(SnackBar(content: Text(error.message)));
+              return false;
+            } on AuthServiceException catch (error) {
+              messenger.showSnackBar(SnackBar(content: Text(error.message)));
+              return false;
+            } catch (error) {
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('Failed to verify. Please try again.'),
                 ),
               );
-            } else {
-              innerNavigator.pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const EntryPoint()),
-                (_) => false,
-              );
+              return false;
+            } finally {
+              authService.dispose();
             }
           },
         ),
@@ -169,12 +196,13 @@ class _SignInFormState extends State<SignInForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel(context, "Enter your phone"),
+          _buildLabel(context, l10n.authEnterPhone),
           const SizedBox(height: 8),
           TextFormField(
             controller: _phoneController,
@@ -186,7 +214,7 @@ class _SignInFormState extends State<SignInForm> {
               FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]')),
             ],
             decoration: _buildInputDecoration(
-              "+998 91 123 54 56",
+              l10n.authPhoneHint,
               suffix: AnimatedSwitcher(
                 duration: kDefaultDuration,
                 transitionBuilder: (child, animation) =>
@@ -203,14 +231,14 @@ class _SignInFormState extends State<SignInForm> {
           ),
           const SizedBox(height: 24),
           Text(
-            'We will send a 4-digit code to this number.',
+            l10n.authOtpInfoLogin,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: bodyTextColor.withValues(alpha: 0.7),
                 ),
           ),
           const SizedBox(height: 24),
           PrimaryButton(
-            text: 'Send Code',
+            text: l10n.authSendCode,
             isLoading: _isSubmitting,
             press: _handleSubmit,
           ),

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -61,86 +63,103 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    // Keep the products carousel clear of the floating navigation bar overlap.
-    final double bottomPadding =0;
+
+    // Safe area inset (iPhone gesture zone)
+    final double bottomInset = MediaQuery.of(context).padding.bottom;
+    const double navBarHeight = 90; // your FloatingNavBar height
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F9),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            defaultPadding,
-            12,
-            defaultPadding,
-            bottomPadding,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                decoration: _panelDecoration(),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          // 🔹 Background + scrollable content
+          Container(
+            color: const Color(0xFFF3F5F9),
+            child: SafeArea(
+              top: true,
+              bottom: false, // we'll handle bottom manually
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  defaultPadding,
+                  12,
+                  defaultPadding,
+                  navBarHeight +
+                      bottomInset +
+                      20, // 👈 extra space for navbar + safe area
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _HomeHeader(),
-                    const SizedBox(height: 24),
-                    TextField(
-                      decoration: _buildSearchDecoration(context),
+                    Container(
+                      decoration: _panelDecoration(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 24,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _HomeHeader(),
+                          const SizedBox(height: 24),
+                          TextField(
+                            decoration: _buildSearchDecoration(context),
+                          ),
+                          const SizedBox(height: 18),
+                          const _CheesecakePromoBanner(),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 18),
-                    const _CheesecakePromoBanner(),
+                    const SizedBox(height: 24),
+                    Text(
+                      l10n.loyaltyTitle,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: titleColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const _LoyaltyStats(),
+                    const SizedBox(height: 24),
+                    InkWell(
+                      onTap: () {
+                        final handled = EntryPoint.selectTab(context, 1);
+                        if (!handled) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const CatalogScreen(),
+                            ),
+                          );
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(18),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              l10n.offersTitle,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: titleColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              color: titleColor,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const _OffersCarousel(),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              Text(
-                l10n.loyaltyTitle,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: titleColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 14),
-              const _LoyaltyStats(),
-              const SizedBox(height: 24),
-              InkWell(
-                onTap: () {
-                  final handled = EntryPoint.selectTab(context, 1);
-                  if (!handled) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const CatalogScreen(),
-                      ),
-                    );
-                  }
-                },
-                borderRadius: BorderRadius.circular(18),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        l10n.offersTitle,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: titleColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: titleColor,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const _OffersCarousel(),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -674,7 +693,8 @@ class _StaticCheesecakeBanner extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    child: Text(l10n.cheesecakeBannerButton),
+                    child: Text(l10n.cheesecakeBannerButton,
+                        textAlign: TextAlign.center),
                   ),
                 ),
               ],
@@ -1101,7 +1121,7 @@ class _OffersCarouselState extends State<_OffersCarousel> {
               final entry = _offers[index];
               final padding = index == _offers.length - 1 ? 0.0 : 12.0;
               return Padding(
-                padding: EdgeInsets.only(right: padding),
+                padding: EdgeInsets.only(right: padding, bottom: 12.0),
                 child: _OfferCard(
                   entry: entry,
                   price: _formatPrice(entry.price.price, isRu),

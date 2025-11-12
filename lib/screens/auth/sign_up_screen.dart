@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../app_localizations.dart';
 import '../../constants.dart';
 import '../signUp/components/sign_up_form.dart';
 import 'sign_in_screen.dart';
@@ -12,6 +13,7 @@ class SignUpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final subtleTextStyle = theme.textTheme.bodyMedium?.copyWith(
           color: bodyTextColor,
           height: 1.4,
@@ -70,7 +72,7 @@ class SignUpScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        "Create account",
+                        l10n.authSignUpTitle,
                         textAlign: TextAlign.center,
                         style: theme.textTheme.headlineSmall?.copyWith(
                               color: titleColor,
@@ -84,7 +86,7 @@ class SignUpScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        "Share your name and phone to get started.",
+                        l10n.authSignUpSubtitle,
                         textAlign: TextAlign.center,
                         style: subtleTextStyle,
                       ),
@@ -98,7 +100,7 @@ class SignUpScreen extends StatelessWidget {
               Center(
                 child: Text.rich(
                   TextSpan(
-                    text: "Already have an account? ",
+                    text: '${l10n.authHaveAccountQuestion} ',
                     style: theme.textTheme.bodyMedium?.copyWith(
                           color: titleColor,
                           fontWeight: FontWeight.w500,
@@ -110,7 +112,7 @@ class SignUpScreen extends StatelessWidget {
                         ),
                     children: <TextSpan>[
                       TextSpan(
-                        text: "Sign In",
+                        text: l10n.authSignInCta,
                         style: const TextStyle(
                           color: primaryColor,
                           fontWeight: FontWeight.w600,

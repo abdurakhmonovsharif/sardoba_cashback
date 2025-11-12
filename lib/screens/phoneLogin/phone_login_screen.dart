@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../components/buttons/primary_button.dart';
 import '../../components/welcome_text.dart';
 import '../../constants.dart';
+import '../../entry_point.dart';
+import '../../services/auth_service.dart';
+import '../../services/auth_storage.dart';
 import 'number_verify_screen.dart';
 
 class PghoneLoginScreen extends StatefulWidget {
@@ -60,15 +63,56 @@ class _PghoneLoginScreenState extends State<PghoneLoginScreen> {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
                     final raw = phoneNumber ?? '';
-                    final normalized = raw.replaceAll(RegExp(r'[^0-9]'), '');
+                    final storage = AuthStorage.instance;
+                    final normalized = storage.normalizePhone(raw);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => NumberVerifyScreen(
                           phone: normalized,
                           displayPhone: raw,
-                          onVerified: (ctx) async {
-                            Navigator.of(ctx).pop();
+                          onVerified: (ctx, code) async {
+                            final messenger = ScaffoldMessenger.of(ctx);
+                            final authService = AuthService();
+                            try {
+                              final session = await authService.verifyOtp(
+                                phone: normalized,
+                                code: code,
+                                purpose: 'login',
+                              );
+                              await storage.upsertAccount(
+                                session.account.copyWith(isVerified: true),
+                              );
+                              await storage
+                                  .setCurrentUser(session.account.phone);
+                              await storage.saveAuthTokens(
+                                accessToken: session.accessToken,
+                                refreshToken: session.refreshToken,
+                                tokenType: session.tokenType,
+                              );
+                              if (!ctx.mounted) return false;
+                              final innerNavigator = Navigator.of(ctx);
+                              innerNavigator.pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                    builder: (_) => const EntryPoint()),
+                                (_) => false,
+                              );
+                              return true;
+                            } on AuthServiceException catch (error) {
+                              messenger.showSnackBar(
+                                  SnackBar(content: Text(error.message)));
+                              return false;
+                            } catch (_) {
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Failed to verify. Please try again.'),
+                                ),
+                              );
+                              return false;
+                            } finally {
+                              authService.dispose();
+                            }
                           },
                         ),
                       ),

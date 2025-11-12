@@ -48,6 +48,14 @@
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
 	<key>YANDEX_MAPKIT_API_KEY</key>
-	<string>$(YANDEX_MAPKIT_API_KEY)</string>
+	<string>2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Kamera orqali profil rasmini yuklash uchun ruxsat kerak.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Profil rasmini tanlash uchun galereyadan foydalanamiz.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Rasmni saqlash uchun ruxsat kerak.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Eng yaqin filialni topish uchun joylashuvingizga ruxsat bering. Разрешите доступ к вашей геолокации, чтобы найти ближайший филиал.</string>
 </dict>
 </plist>

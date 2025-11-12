@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/account.dart';
+import 'auth_service.dart';
 
 class AuthStorage {
   AuthStorage._();
@@ -13,6 +14,9 @@ class AuthStorage {
   static const _accountsKey = 'accounts';
   static const _currentUserKey = 'current_user';
   static const _pinKey = 'app_pin';
+  static const _authTokenKey = 'auth_token';
+  static const _refreshTokenKey = 'refresh_token';
+  static const _tokenTypeKey = 'auth_token_type';
 
   SharedPreferences? _prefs;
 
@@ -79,10 +83,36 @@ class AuthStorage {
     await _prefs!.setString(_currentUserKey, phone);
   }
 
-
   Future<void> clearCurrentUser() async {
     await ensureInitialized();
     await _prefs!.remove(_currentUserKey);
+    await _prefs!.remove(_authTokenKey);
+    await _prefs!.remove(_refreshTokenKey);
+    await _prefs!.remove(_tokenTypeKey);
+  }
+
+  Future<void> logout() async {
+    await clearPin();
+    await clearCurrentUser();
+  }
+
+  Future<bool> refreshTokens() async {
+    final refreshToken = await getRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) return false;
+    final authService = AuthService();
+    try {
+      final pair = await authService.refreshTokens(refreshToken: refreshToken);
+      await saveAuthTokens(
+        accessToken: pair.accessToken,
+        refreshToken: pair.refreshToken,
+        tokenType: pair.tokenType,
+      );
+      return true;
+    } on AuthServiceException {
+      return false;
+    } finally {
+      authService.dispose();
+    }
   }
 
   Future<String?> getCurrentUser() async {
@@ -124,5 +154,56 @@ class AuthStorage {
 
   String _hash(String value) {
     return sha256.convert(utf8.encode(value)).toString();
+  }
+
+  Future<void> saveAuthTokens({
+    String? accessToken,
+    String? refreshToken,
+    String? tokenType,
+  }) async {
+    await ensureInitialized();
+    if (accessToken == null || accessToken.isEmpty) {
+      await _prefs!.remove(_authTokenKey);
+    } else {
+      await _prefs!.setString(_authTokenKey, accessToken);
+    }
+
+    if (refreshToken == null || refreshToken.isEmpty) {
+      await _prefs!.remove(_refreshTokenKey);
+    } else {
+      await _prefs!.setString(_refreshTokenKey, refreshToken);
+    }
+
+    if (tokenType == null || tokenType.isEmpty) {
+      await _prefs!.remove(_tokenTypeKey);
+    } else {
+      await _prefs!.setString(_tokenTypeKey, tokenType);
+    }
+  }
+
+  Future<String?> getAccessToken() async {
+    await ensureInitialized();
+    return _prefs!.getString(_authTokenKey);
+  }
+
+  Future<String?> getRefreshToken() async {
+    await ensureInitialized();
+    return _prefs!.getString(_refreshTokenKey);
+  }
+
+  Future<String?> getTokenType() async {
+    await ensureInitialized();
+    return _prefs!.getString(_tokenTypeKey);
+  }
+
+  @Deprecated('Use saveAuthTokens instead')
+  Future<void> saveAuthToken(String? token) async {
+    await saveAuthTokens(accessToken: token);
+  }
+
+  @Deprecated('Use getAccessToken instead')
+  Future<String?> getAuthToken() async {
+    await ensureInitialized();
+    return _prefs!.getString(_authTokenKey);
   }
 }
