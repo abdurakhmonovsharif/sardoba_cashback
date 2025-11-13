@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'constants.dart';
 import 'screens/catalog/catalog_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/locations/locations_screen.dart';
@@ -99,7 +100,7 @@ class FloatingNavBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: SizedBox(
-        height: 90,
+        height: floatingNavBarHeight,
         child: Stack(
           alignment: Alignment.center,
           children: [

@@ -350,10 +350,14 @@ class _ProfileBodyState extends State<_ProfileBody> {
           return const Center(child: CircularProgressIndicator());
         }
         final account = snapshot.data;
+        final double scrollBottomPadding =
+            navAwareBottomPadding(context, extra: 24);
         return SafeArea(
+          top: true,
+          bottom: false,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-                defaultPadding, 0, defaultPadding, 24),
+            padding: EdgeInsets.fromLTRB(
+                defaultPadding, 0, defaultPadding, scrollBottomPadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

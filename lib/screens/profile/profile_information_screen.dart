@@ -231,6 +231,7 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
                       const SizedBox(height: 18),
                       _LabeledField(
                         label: l10n.formFullNameLabel,
+                        helper: '',
                         child: TextFormField(
                           controller: _nameController,
                           enabled: hasAccount,
@@ -250,6 +251,7 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
                       const SizedBox(height: 16),
                       _LabeledField(
                         label: l10n.formPhoneLabel,
+                        helper: '',
                         child: TextFormField(
                           controller: _phoneController,
                           readOnly: true,
@@ -260,6 +262,7 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
                       const SizedBox(height: 16),
                       _LabeledField(
                         label: l10n.profileDobLabel,
+                        helper: '',
                         error: _dobError,
                         child: _DobPicker(
                           enabled: hasAccount,

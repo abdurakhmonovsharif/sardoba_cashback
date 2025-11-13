@@ -156,6 +156,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isRu = l10n.locale == AppLocale.ru;
+    final double bottomPadding = navAwareBottomPadding(context, extra: 24);
 
     final children = <Widget>[
       _CatalogHeader(title: l10n.catalogTitle),
@@ -250,15 +251,17 @@ class _CatalogScreenState extends State<CatalogScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F9),
       body: SafeArea(
+        top: true,
+        bottom: false,
         child: RefreshIndicator(
           onRefresh: () => _loadCatalog(forceRefresh: true),
           color: primaryColor,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
               defaultPadding,
               20,
               defaultPadding,
-              24,
+              bottomPadding,
             ),
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),

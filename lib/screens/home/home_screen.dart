@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -63,10 +61,8 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-
-    // Safe area inset (iPhone gesture zone)
-    final double bottomInset = MediaQuery.of(context).padding.bottom;
-    const double navBarHeight = 90; // your FloatingNavBar height
+    final double scrollBottomPadding =
+        navAwareBottomPadding(context, extra: 20);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -83,9 +79,7 @@ class HomeScreen extends StatelessWidget {
                   defaultPadding,
                   12,
                   defaultPadding,
-                  navBarHeight +
-                      bottomInset +
-                      20, // 👈 extra space for navbar + safe area
+                  scrollBottomPadding,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

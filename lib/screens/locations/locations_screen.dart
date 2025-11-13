@@ -35,7 +35,8 @@ class _LocationsScreenState extends State<LocationsScreen> {
   void initState() {
     super.initState();
     _branchState.addListener(_handleGlobalBranchChange);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptForLocation());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _maybePromptForLocation());
   }
 
   @override
@@ -263,10 +264,13 @@ class _LocationsScreenState extends State<LocationsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
+    final double listBottomPadding = navAwareBottomPadding(context, extra: 24);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F9),
       body: SafeArea(
+        top: true,
+        bottom: false,
         child: Padding(
           padding:
               const EdgeInsets.fromLTRB(defaultPadding, 20, defaultPadding, 0),
@@ -307,7 +311,7 @@ class _LocationsScreenState extends State<LocationsScreen> {
               const SizedBox(height: 16),
               Expanded(
                 child: ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 24),
+                  padding: EdgeInsets.only(bottom: listBottomPadding),
                   physics: const BouncingScrollPhysics(),
                   itemCount: _branches.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 14),

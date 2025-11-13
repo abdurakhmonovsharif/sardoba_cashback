@@ -7,17 +7,18 @@ class PinDots extends StatelessWidget {
 
   final int count;
   final int filled;
-
+  
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (index) {
         final isFilled = index < filled;
         return AnimatedContainer(
           duration: kDefaultDuration,
           curve: Curves.easeOut,
-          margin: const EdgeInsets.symmetric(horizontal: 12),
+          margin: const EdgeInsets.symmetric(horizontal: 8),
           height: 16,
           width: 16,
           decoration: BoxDecoration(
@@ -73,33 +74,51 @@ class PinKeypad extends StatelessWidget {
       ],
     ];
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: rows
-          .map(
-            (row) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: row.map((key) => _buildKey(context, key)).toList(),
-              ),
-            ),
-          )
-          .toList(),
+    const double rowSpacing = 20;
+    const double minKeySize = 60;
+    const double maxKeySize = 78;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableHeight = constraints.maxHeight;
+        double keySize = maxKeySize;
+        if (availableHeight.isFinite) {
+          final candidate =
+              (availableHeight - (rowSpacing * rows.length)) / rows.length;
+          keySize = candidate.clamp(minKeySize, maxKeySize);
+        }
+
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: rows
+              .map(
+                (row) => Padding(
+                  padding: EdgeInsets.symmetric(vertical: rowSpacing / 2),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: row
+                        .map((key) => _buildKey(context, key, keySize))
+                        .toList(),
+                  ),
+                ),
+              )
+              .toList(),
+        );
+      },
     );
   }
 
-  Widget _buildKey(BuildContext context, _PinKey key) {
+  Widget _buildKey(BuildContext context, _PinKey key, double size) {
     if (key.type == _PinKeyType.empty) {
-      return const SizedBox(width: 78, height: 78);
+      return SizedBox(width: size, height: size);
     }
 
     final theme = Theme.of(context);
     final disabled = isBusy;
 
     return SizedBox(
-      width: 78,
-      height: 78,
+      width: size,
+      height: size,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -112,7 +131,7 @@ class PinKeypad extends StatelessWidget {
                     onDigitPressed(key.label!);
                   }
                 },
-          borderRadius: BorderRadius.circular(39),
+          borderRadius: BorderRadius.circular(size / 2),
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,

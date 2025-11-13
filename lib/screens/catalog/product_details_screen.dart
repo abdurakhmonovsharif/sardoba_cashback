@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../app_language.dart';
@@ -310,7 +311,8 @@ class _ProductHeroImage extends StatelessWidget {
                       ),
                     );
                   },
-                  errorBuilder: (context, error, stackTrace) => const _ImageFallback(),
+                  errorBuilder: (context, error, stackTrace) =>
+                      const _ImageFallback(),
                 )
               : const _ImageFallback(),
         ),
@@ -384,13 +386,19 @@ class _RelatedProductCard extends StatelessWidget {
                   topRight: Radius.circular(18),
                 ),
                 child: image != null
-                    ? Image.network(
-                        image,
+                    ? CachedNetworkImage(
+                        imageUrl: image,
                         height: 100,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
+                        placeholder: (context, url) =>
                             const _RelatedImagePlaceholder(),
+                        errorWidget: (context, url, error) =>
+                            const _RelatedImagePlaceholder(),
+
+                        // optional optimizations
+                        memCacheHeight: 300,
+                        memCacheWidth: 300,
                       )
                     : const _RelatedImagePlaceholder(),
               ),
@@ -432,8 +440,7 @@ class _RelatedProductCard extends StatelessWidget {
                                   ? Icons.favorite_rounded
                                   : Icons.favorite_border_rounded,
                             ),
-                            color:
-                                isFavorite ? primaryColor : bodyTextColor,
+                            color: isFavorite ? primaryColor : bodyTextColor,
                             iconSize: 22,
                             padding: const EdgeInsets.all(4),
                             constraints: const BoxConstraints(

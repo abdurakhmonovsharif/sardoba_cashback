@@ -9,7 +9,14 @@ const bodyTextColor = Color(0xFF868686);
 const inputColor = Color(0xFFFBFBFB);
 
 const double defaultPadding = 16;
+const double floatingNavBarHeight = 90;
 const Duration kDefaultDuration = Duration(milliseconds: 250);
+
+// Accounts for the floating nav bar height + safe-area inset.
+double navAwareBottomPadding(BuildContext context, {double extra = 0}) {
+  final bottomInset = MediaQuery.of(context).padding.bottom;
+  return floatingNavBarHeight + bottomInset + extra;
+}
 
 const TextStyle kButtonTextStyle = TextStyle(
   color: Colors.white,
