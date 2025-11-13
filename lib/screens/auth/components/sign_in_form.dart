@@ -7,6 +7,7 @@ import '../../../constants.dart';
 import '../../../entry_point.dart';
 import '../../../services/auth_storage.dart';
 import '../../../services/auth_service.dart';
+import '../../../utils/snackbar_utils.dart';
 import '../../phoneLogin/number_verify_screen.dart';
 import '../../pin/pin_setup_screen.dart';
 
@@ -116,20 +117,49 @@ class _SignInFormState extends State<SignInForm> {
 
     setState(() => _isSubmitting = true);
     final navigator = Navigator.of(context);
+    final strings = AppLocalizations.of(context);
     final storage = AuthStorage.instance;
     final phoneRaw = _phoneController.text;
     final phone = storage.normalizePhone(phoneRaw);
-    if (!mounted) return;
+    final authService = AuthService();
+    try {
+      await authService.requestOtp(phone: phone, purpose: 'login');
+    } on AuthServiceException catch (error) {
+      if (!mounted) return;
+      showNavAwareSnackBar(
+        context,
+        content: Text(error.message),
+      );
+      return;
+    } catch (_) {
+      if (!mounted) return;
+      showNavAwareSnackBar(
+        context,
+        content: Text(strings.commonErrorTryAgain),
+      );
+      return;
+    } finally {
+      authService.dispose();
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
 
-    setState(() => _isSubmitting = false);
     if (!mounted) return;
     navigator.push(
       MaterialPageRoute(
         builder: (_) => NumberVerifyScreen(
           phone: phone,
           displayPhone: phoneRaw,
+          onResend: () async {
+            final service = AuthService();
+            try {
+              await service.requestOtp(phone: phone, purpose: 'login');
+            } finally {
+              service.dispose();
+            }
+          },
           onVerified: (ctx, code) async {
-            final messenger = ScaffoldMessenger.of(ctx);
             final authService = AuthService();
             try {
               final session = await authService.verifyOtp(
@@ -173,16 +203,24 @@ class _SignInFormState extends State<SignInForm> {
               return true;
             } on AuthUnauthorizedException catch (error) {
               await storage.logout();
-              messenger.showSnackBar(SnackBar(content: Text(error.message)));
+              if (!ctx.mounted) return false;
+              showNavAwareSnackBar(
+                ctx,
+                content: Text(error.message),
+              );
               return false;
             } on AuthServiceException catch (error) {
-              messenger.showSnackBar(SnackBar(content: Text(error.message)));
+              if (!ctx.mounted) return false;
+              showNavAwareSnackBar(
+                ctx,
+                content: Text(error.message),
+              );
               return false;
             } catch (error) {
-              messenger.showSnackBar(
-                const SnackBar(
-                  content: Text('Failed to verify. Please try again.'),
-                ),
+              if (!ctx.mounted) return false;
+              showNavAwareSnackBar(
+                ctx,
+                content: const Text('Failed to verify. Please try again.'),
               );
               return false;
             } finally {

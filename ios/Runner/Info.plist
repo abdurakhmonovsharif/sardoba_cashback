@@ -48,7 +48,7 @@
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
 	<key>YANDEX_MAPKIT_API_KEY</key>
-	<string>2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40</string>
+	<string></string>
 	<key>NSCameraUsageDescription</key>
 	<string>Kamera orqali profil rasmini yuklash uchun ruxsat kerak.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

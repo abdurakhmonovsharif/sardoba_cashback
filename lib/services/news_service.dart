@@ -2,16 +2,16 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
+import '../config/app_config.dart';
 import '../models/news.dart';
 
 class NewsService {
   NewsService({
     Dio? dio,
     String? baseUrl,
-  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? _defaultBaseUrl)),
+  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
         _ownsDio = dio == null;
 
-  static const String _defaultBaseUrl = 'http://185.217.131.110:8000';
   static const String _newsPath = '/api/v1/news';
 
   final Dio _dio;

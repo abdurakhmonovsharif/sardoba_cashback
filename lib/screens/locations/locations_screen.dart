@@ -9,6 +9,7 @@ import '../../app_localizations.dart';
 import '../../constants.dart';
 import '../../models/branch.dart';
 import '../../services/branch_state.dart';
+import '../../utils/snackbar_utils.dart';
 
 final BitmapDescriptor _branchPinIcon =
     BitmapDescriptor.fromAssetImage('assets/icons/branch_pin.png');
@@ -196,8 +197,9 @@ class _LocationsScreenState extends State<LocationsScreen> {
 
   void _showLocationSnack(String message) {
     if (!mounted || message.isEmpty) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+    showNavAwareSnackBar(
+      context,
+      content: Text(message),
     );
   }
 
@@ -342,8 +344,9 @@ class _LocationsScreenState extends State<LocationsScreen> {
     );
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.locationsDirectionsError)),
+      showNavAwareSnackBar(
+        context,
+        content: Text(l10n.locationsDirectionsError),
       );
     }
   }

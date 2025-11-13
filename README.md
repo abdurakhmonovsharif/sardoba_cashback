@@ -33,12 +33,20 @@ keeps diners engaged without having to build the core UX from scratch.
    ```bash
    flutter pub get
    ```
-3. Configure environment variables if required by your integrations by updating
-   the `.env` file at the project root.
+3. Copy `.env.example` to `.env` and set your own values for the API endpoint
+   and Yandex MapKit key. These values are now consumed by both Flutter and the
+   native Android/iOS launchers.
 4. Launch the app:
    ```bash
    flutter run
    ```
+
+### Environment reference
+
+| Key | Description |
+| --- | --- |
+| `API_BASE_URL` | Base URL for all REST services (Auth, Catalog, Cashback, etc). |
+| `YANDEX_MAPKIT_API_KEY` | Native Yandex MapKit SDK key used by both Android and iOS bootstrap code. |
 
 Run `flutter test` to execute widget or unit tests located in the `test/`
 directory.

@@ -6,6 +6,7 @@ import '../../models/account.dart';
 import '../../navigation/app_navigator.dart';
 import '../../services/auth_service.dart';
 import '../../services/auth_storage.dart';
+import '../../utils/snackbar_utils.dart';
 
 class ProfileInformationScreen extends StatefulWidget {
   const ProfileInformationScreen({super.key, this.account});
@@ -52,7 +53,6 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
   Future<void> _save() async {
     final account = _initialAccount;
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     if (account == null) {
       Navigator.of(context).maybePop(false);
       return;
@@ -67,8 +67,10 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
     final accessToken = await storage.getAccessToken();
     if (accessToken == null || accessToken.isEmpty) {
       setState(() => _isSaving = false);
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.profileLoginRequired)),
+      if (!mounted) return;
+      showNavAwareSnackBar(
+        context,
+        content: Text(l10n.profileLoginRequired),
       );
       return;
     }
@@ -89,23 +91,26 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
       );
       await storage.upsertAccount(merged.copyWith(isVerified: true));
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.profileInfoSaveSuccess),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showNavAwareSnackBar(
+        context,
+        content: Text(l10n.profileInfoSaveSuccess),
       );
       Navigator.of(context).pop(true);
     } on AuthUnauthorizedException {
       await AppNavigator.forceLogout();
     } on AuthServiceException catch (error) {
       if (mounted) {
-        messenger.showSnackBar(SnackBar(content: Text(error.message)));
+        showNavAwareSnackBar(
+          context,
+          content: Text(error.message),
+        );
       }
     } catch (_) {
       if (mounted) {
-        messenger
-            .showSnackBar(SnackBar(content: Text(l10n.commonErrorTryAgain)));
+        showNavAwareSnackBar(
+          context,
+          content: Text(l10n.commonErrorTryAgain),
+        );
       }
     } finally {
       authService.dispose();

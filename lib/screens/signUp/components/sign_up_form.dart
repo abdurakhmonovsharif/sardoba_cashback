@@ -7,6 +7,7 @@ import '../../../constants.dart';
 import '../../../entry_point.dart';
 import '../../../services/auth_storage.dart';
 import '../../../services/auth_service.dart';
+import '../../../utils/snackbar_utils.dart';
 import '../../phoneLogin/number_verify_screen.dart';
 
 class SignUpForm extends StatefulWidget {
@@ -144,16 +145,52 @@ class _SignUpFormState extends State<SignUpForm>
         ? null
         : _referralController.text.trim();
 
+    final authService = AuthService();
+    try {
+      await authService.requestOtp(
+        phone: normalizedPhone,
+        purpose: 'register',
+      );
+    } on AuthServiceException catch (error) {
+      if (!mounted) return;
+      showNavAwareSnackBar(
+        context,
+        content: Text(error.message),
+      );
+      return;
+    } catch (_) {
+      if (!mounted) return;
+      showNavAwareSnackBar(
+        context,
+        content: Text(l10n.commonErrorTryAgain),
+      );
+      return;
+    } finally {
+      authService.dispose();
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+
     if (!mounted) return;
-    setState(() => _isSubmitting = false);
     navigator.push(
       MaterialPageRoute(
         builder: (_) => NumberVerifyScreen(
           phone: normalizedPhone,
           displayPhone: phoneRaw,
           demoCode: '1234',
+          onResend: () async {
+            final service = AuthService();
+            try {
+              await service.requestOtp(
+                phone: normalizedPhone,
+                purpose: 'register',
+              );
+            } finally {
+              service.dispose();
+            }
+          },
           onVerified: (ctx, code) async {
-            final messenger = ScaffoldMessenger.of(ctx);
             final localL10n = AppLocalizations.of(ctx);
             final authService = AuthService();
             try {
@@ -182,11 +219,17 @@ class _SignUpFormState extends State<SignUpForm>
               );
               return true;
             } on AuthServiceException catch (error) {
-              messenger.showSnackBar(SnackBar(content: Text(error.message)));
+              if (!ctx.mounted) return false;
+              showNavAwareSnackBar(
+                ctx,
+                content: Text(error.message),
+              );
               return false;
             } catch (error) {
-              messenger.showSnackBar(
-                SnackBar(content: Text(localL10n.commonErrorTryAgain)),
+              if (!ctx.mounted) return false;
+              showNavAwareSnackBar(
+                ctx,
+                content: Text(localL10n.commonErrorTryAgain),
               );
               return false;
             } finally {

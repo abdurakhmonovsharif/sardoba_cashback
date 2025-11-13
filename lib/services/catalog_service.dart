@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
+import '../config/app_config.dart';
 import '../models/catalog.dart';
 
 class CatalogService {
@@ -9,11 +10,10 @@ class CatalogService {
     Dio? dio,
     String? baseUrl,
     String? catalogPath,
-  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? _defaultBaseUrl)),
+  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
         _ownsDio = dio == null,
         _catalogPath = catalogPath ?? _defaultCatalogPath;
 
-  static const String _defaultBaseUrl = 'http://185.217.131.110:8000';
   static const String _defaultCatalogPath = '/api/v1/catalog/live';
 
   final Dio _dio;

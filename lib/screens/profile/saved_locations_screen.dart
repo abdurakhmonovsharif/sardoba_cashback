@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../constants.dart';
 import '../../models/saved_location.dart';
 import '../../services/saved_locations_service.dart';
+import '../../utils/snackbar_utils.dart';
 
 class SavedLocationsScreen extends StatefulWidget {
   const SavedLocationsScreen({super.key});
@@ -80,11 +81,9 @@ class _SavedLocationsScreenState extends State<SavedLocationsScreen> {
     if (!confirmed) return;
     await _service.removeLocation(location.id);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Location removed'),
-        behavior: SnackBarBehavior.floating,
-      ),
+    showNavAwareSnackBar(
+      context,
+      content: const Text('Location removed'),
     );
   }
 
@@ -359,12 +358,10 @@ class _SavedLocationFormScreenState extends State<SavedLocationFormScreen> {
       await _service.updateLocation(updated);
     }
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(location == null
-            ? 'Location added'
-            : 'Location updated'),
-        behavior: SnackBarBehavior.floating,
+    showNavAwareSnackBar(
+      context,
+      content: Text(
+        location == null ? 'Location added' : 'Location updated',
       ),
     );
     Navigator.of(context).pop();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:sardoba_app/app_localizations.dart';
 import '../../entry_point.dart';
 
 import '../../constants.dart';
@@ -30,8 +31,9 @@ class _FindRestaurantsScreenState extends State<FindRestaurantsScreen> {
               child: prefix,
             )
           : null,
-      prefixIconConstraints:
-          prefix != null ? const BoxConstraints(minHeight: 24, minWidth: 24) : null,
+      prefixIconConstraints: prefix != null
+          ? const BoxConstraints(minHeight: 24, minWidth: 24)
+          : null,
       border: const OutlineInputBorder(
         borderRadius: borderRadius,
         borderSide: BorderSide(color: Colors.transparent),
@@ -58,6 +60,7 @@ class _FindRestaurantsScreenState extends State<FindRestaurantsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final subtleTextStyle = theme.textTheme.bodyMedium?.copyWith(
           color: bodyTextColor,
           height: 1.4,
@@ -234,13 +237,14 @@ class _FindRestaurantsScreenState extends State<FindRestaurantsScreen> {
                                 ),
                               ),
                               onPressed: () {
-                                if (_formKey.currentState?.validate() ?? false) {
+                                if (_formKey.currentState?.validate() ??
+                                    false) {
                                   _openEntryPoint();
                                 }
                               },
-                              child: const Text(
-                                "Continue",
-                                style: TextStyle(
+                              child: Text(
+                                l10n.authContinue,
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),

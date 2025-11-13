@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
+import 'package:sardoba_app/app_localizations.dart';
 
 import '../../../constants.dart';
 
 import '../../../components/buttons/primary_button.dart';
 
 class OtpForm extends StatefulWidget {
-  const OtpForm({super.key, required this.onSubmit});
+  const OtpForm({
+    super.key,
+    required this.onSubmit,
+    this.incorrectCodeLabel = 'Incorrect code',
+  });
 
   final Future<bool> Function(String code) onSubmit;
+  final String incorrectCodeLabel;
 
   @override
   State<OtpForm> createState() => _OtpFormState();
@@ -52,6 +58,7 @@ class _OtpFormState extends State<OtpForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Form(
       key: _formKey,
       child: Column(
@@ -143,7 +150,7 @@ class _OtpFormState extends State<OtpForm> {
             const SizedBox(height: defaultPadding * 2),
           // Continue Button
           PrimaryButton(
-            text: "Continue",
+            text:l10n.authContinue ,
             isLoading: _isSubmitting,
             press: () async {
               if (!(_formKey.currentState?.validate() ?? false) ||
@@ -163,7 +170,7 @@ class _OtpFormState extends State<OtpForm> {
               if (!success) {
                 setState(() {
                   _isSubmitting = false;
-                  _error = 'Incorrect code';
+                  _error = widget.incorrectCodeLabel;
                   _pin1Controller.clear();
                   _pin2Controller.clear();
                   _pin3Controller.clear();

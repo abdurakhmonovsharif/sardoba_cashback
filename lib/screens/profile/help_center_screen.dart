@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../app_localizations.dart';
 import '../../constants.dart';
+import '../../utils/snackbar_utils.dart';
 
 class HelpCenterScreen extends StatelessWidget {
   const HelpCenterScreen({super.key});
@@ -11,12 +12,13 @@ class HelpCenterScreen extends StatelessWidget {
   static final Uri _callUri = Uri(scheme: 'tel', path: '+998783337333');
 
   Future<void> _callSupport(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
     final launched = await launchUrl(_callUri);
     if (!launched) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.helpCenterCallError)),
+      if (!context.mounted) return;
+      showNavAwareSnackBar(
+        context,
+        content: Text(l10n.helpCenterCallError),
       );
     }
   }

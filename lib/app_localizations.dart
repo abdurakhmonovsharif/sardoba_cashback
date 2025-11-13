@@ -355,6 +355,28 @@ class AppStrings {
   String get authOtpInfoRegister => _isRu
       ? 'Мы отправим 4-значный код для подтверждения номера.'
       : 'Raqamni tasdiqlash uchun 4 xonali kod yuboramiz.';
+  String get authOtpScreenTitle =>
+      _isRu ? 'Подтвердите код' : 'Tasdiqlash kodi';
+  String authOtpSubtitle(String phoneLabel) => _isRu
+      ? 'Введите 4-значный код, отправленный на $phoneLabel.'
+      : '$phoneLabel raqamiga yuborilgan 4 xonali kodni kiriting.';
+  String authOtpDemoHelper(String code) => _isRu
+      ? 'Для демо используйте код $code.'
+      : 'Demo uchun $code kodidan foydalaning.';
+  String get authOtpResendQuestion =>
+      _isRu ? 'Код не пришёл?' : 'Kod kelmadimi?';
+  String get authOtpResendCta =>
+      _isRu ? 'Отправить ещё раз' : 'Qayta yuborish';
+  String get authOtpResent =>
+      _isRu ? 'Код отправлен повторно' : 'Kod qayta yuborildi';
+  String get authOtpResendFailed => _isRu
+      ? 'Не удалось отправить код. Попробуйте ещё раз.'
+      : 'Kod yuborilmadi. Qayta urinib koʻring.';
+  String get authOtpIncorrect =>
+      _isRu ? 'Неверный код' : 'Notoʻgʻri kod';
+  String get authOtpTerms => _isRu
+      ? 'Продолжая, вы соглашаетесь с условиями и политикой конфиденциальности.'
+      : 'Davom etish orqali siz shartlar va maxfiylik siyosatiga rozilik bildirasiz.';
   String get authSignInSubtitle => _isRu
       ? 'Введите номер телефона, чтобы получить код подтверждения.'
       : 'Tasdiqlash kodini olish uchun telefon raqamingizni kiriting.';

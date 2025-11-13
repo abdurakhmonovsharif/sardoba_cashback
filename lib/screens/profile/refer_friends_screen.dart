@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../constants.dart';
 import '../../models/account.dart';
 import '../../services/auth_storage.dart';
+import '../../utils/snackbar_utils.dart';
 
 class ReferFriendsScreen extends StatefulWidget {
   const ReferFriendsScreen({super.key, this.account});
@@ -30,11 +31,9 @@ class _ReferFriendsScreenState extends State<ReferFriendsScreen> {
   Future<void> _copyCode(String code) async {
     await Clipboard.setData(ClipboardData(text: code));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Referral code copied'),
-        behavior: SnackBarBehavior.floating,
-      ),
+    showNavAwareSnackBar(
+      context,
+      content: const Text('Referral code copied'),
     );
   }
 
@@ -50,11 +49,9 @@ class _ReferFriendsScreenState extends State<ReferFriendsScreen> {
       _referralCode = code;
       _isGenerating = false;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Referral code generated'),
-        behavior: SnackBarBehavior.floating,
-      ),
+    showNavAwareSnackBar(
+      context,
+      content: const Text('Referral code generated'),
     );
   }
 

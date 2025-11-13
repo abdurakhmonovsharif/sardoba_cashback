@@ -2,16 +2,16 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
+import '../config/app_config.dart';
 import '../models/app_notification.dart';
 
 class NotificationService {
   NotificationService({
     Dio? dio,
     String? baseUrl,
-  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? _defaultBaseUrl)),
+  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
         _ownsDio = dio == null;
 
-  static const String _defaultBaseUrl = 'http://185.217.131.110:8000';
   static const String _notificationsPath = '/api/v1/notifications';
 
   final Dio _dio;

@@ -11,6 +11,7 @@ import '../../models/account.dart';
 import '../../navigation/app_navigator.dart';
 import '../../services/auth_service.dart';
 import '../../services/auth_storage.dart';
+import '../../utils/snackbar_utils.dart';
 import '../cashback/cashback_screen.dart';
 import '../notifications/notifications_screen.dart';
 import 'change_pin_screen.dart';
@@ -223,8 +224,9 @@ class _ProfileBodyState extends State<_ProfileBody> {
     if (accessToken == null || accessToken.isEmpty) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileLoginRequired)),
+      showNavAwareSnackBar(
+        context,
+        content: Text(l10n.profileLoginRequired),
       );
       return;
     }
@@ -245,22 +247,25 @@ class _ProfileBodyState extends State<_ProfileBody> {
       await storage.upsertAccount(updated.copyWith(isVerified: true));
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileAvatarUploadSuccess)),
+      showNavAwareSnackBar(
+        context,
+        content: Text(l10n.profileAvatarUploadSuccess),
       );
       _refreshAccount();
     } on AuthUnauthorizedException {
       await AppNavigator.forceLogout();
     } on AuthServiceException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
+      showNavAwareSnackBar(
+        context,
+        content: Text(error.message),
       );
     } catch (_) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileAvatarUploadError)),
+      showNavAwareSnackBar(
+        context,
+        content: Text(l10n.profileAvatarUploadError),
       );
     } finally {
       authService.dispose();
@@ -306,8 +311,9 @@ class _ProfileBodyState extends State<_ProfileBody> {
     final accessToken = await storage.getAccessToken();
     if (accessToken == null || accessToken.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileLoginRequired)),
+      showNavAwareSnackBar(
+        context,
+        content: Text(l10n.profileLoginRequired),
       );
       return;
     }
@@ -320,8 +326,9 @@ class _ProfileBodyState extends State<_ProfileBody> {
         tokenType: tokenType,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.profileDeleteSuccess)),
+        showNavAwareSnackBar(
+          context,
+          content: Text(l10n.profileDeleteSuccess),
         );
       }
       await AppNavigator.forceLogout();
@@ -329,8 +336,9 @@ class _ProfileBodyState extends State<_ProfileBody> {
       await AppNavigator.forceLogout();
     } on AuthServiceException catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message)),
+        showNavAwareSnackBar(
+          context,
+          content: Text(error.message),
         );
       }
     } finally {

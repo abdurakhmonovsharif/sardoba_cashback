@@ -11,6 +11,7 @@ import '../../services/auth_service.dart';
 import '../../services/auth_storage.dart';
 import '../../services/branch_state.dart';
 import '../../services/cashback_service.dart';
+import '../../utils/snackbar_utils.dart';
 
 class CashbackScreen extends StatefulWidget {
   const CashbackScreen({
@@ -272,8 +273,9 @@ class _CashbackScreenState extends State<CashbackScreen> {
   Future<void> _handleRedeem(AppStrings l10n, bool canRedeem) async {
     if (!canRedeem) return;
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.cashbackRedeemSuccess)),
+    showNavAwareSnackBar(
+      context,
+      content: Text(l10n.cashbackRedeemSuccess),
     );
   }
 

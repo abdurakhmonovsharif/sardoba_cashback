@@ -1,12 +1,13 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../../app_localizations.dart';
 import '../../components/welcome_text.dart';
 import '../../constants.dart';
 import '../../services/auth_service.dart';
+import '../../utils/snackbar_utils.dart';
 import 'components/otp_form.dart';
 
-class NumberVerifyScreen extends StatelessWidget {
+class NumberVerifyScreen extends StatefulWidget {
   const NumberVerifyScreen({
     super.key,
     required this.phone,
@@ -15,20 +16,73 @@ class NumberVerifyScreen extends StatelessWidget {
     this.title,
     this.subtitle,
     this.demoCode,
+    this.onResend,
   });
 
   final String phone;
   final Future<bool> Function(BuildContext context, String code) onVerified;
+  final Future<void> Function()? onResend;
   final String? displayPhone;
   final String? title;
   final String? subtitle;
   final String? demoCode;
 
   @override
+  State<NumberVerifyScreen> createState() => _NumberVerifyScreenState();
+}
+
+class _NumberVerifyScreenState extends State<NumberVerifyScreen> {
+  bool _isResending = false;
+
+  String _buildDefaultSubtitle(AppStrings strings, String phoneLabel) {
+    final buffer = StringBuffer(strings.authOtpSubtitle(phoneLabel));
+    if (widget.demoCode != null && widget.demoCode!.isNotEmpty) {
+      buffer.write('\n${strings.authOtpDemoHelper(widget.demoCode!)}');
+    }
+    return buffer.toString();
+  }
+
+  Future<void> _handleResend(AppStrings strings) async {
+    if (widget.onResend == null || _isResending) return;
+    setState(() => _isResending = true);
+    try {
+      await widget.onResend!.call();
+      if (!mounted) return;
+      showNavAwareSnackBar(
+        context,
+        content: Text(strings.authOtpResent),
+      );
+    } on AuthServiceException catch (error) {
+      if (mounted) {
+        showNavAwareSnackBar(
+          context,
+          content: Text(error.message),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        showNavAwareSnackBar(
+          context,
+          content: Text(strings.authOtpResendFailed),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isResending = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
+    final phoneLabel = widget.displayPhone ?? '+${widget.phone}';
+    final subtitle =
+        widget.subtitle ?? _buildDefaultSubtitle(strings, phoneLabel);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Verify phone number"),
+        title: Text(widget.title ?? strings.authOtpScreenTitle),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -37,37 +91,34 @@ class NumberVerifyScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               WelcomeText(
-                title: title ?? 'Confirm your code',
-                text: subtitle ??
-                    _buildDefaultSubtitle(displayPhone ?? '+$phone', demoCode),
+                title: widget.title ?? strings.authOtpScreenTitle,
+                text: subtitle,
               ),
-
-              // OTP form
               OtpForm(
+                incorrectCodeLabel: strings.authOtpIncorrect,
                 onSubmit: (code) async {
                   try {
-                    final success = await onVerified(context, code);
+                    final success = await widget.onVerified(context, code);
                     if (!success && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Could not verify the code.'),
-                        ),
+                      showNavAwareSnackBar(
+                        context,
+                        content: Text(strings.authOtpIncorrect),
                       );
                     }
                     return success;
                   } on AuthServiceException catch (error) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(error.message)),
+                      showNavAwareSnackBar(
+                        context,
+                        content: Text(error.message),
                       );
                     }
                     return false;
-                  } catch (error) {
+                  } catch (_) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Something went wrong. Try again.'),
-                        ),
+                      showNavAwareSnackBar(
+                        context,
+                        content: Text(strings.commonErrorTryAgain),
                       );
                     }
                     return false;
@@ -75,32 +126,38 @@ class NumberVerifyScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: defaultPadding),
-              Center(
-                child: Text.rich(
-                  TextSpan(
-                    text: "Didn’t receive code? ",
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall!
-                        .copyWith(fontWeight: FontWeight.w500),
-                    children: <TextSpan>[
-                      TextSpan(
-                        text: "Resend Again.",
-                        style: const TextStyle(color: primaryColor),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            // Your OTP PIN resend code
-                          },
-                      ),
-                    ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    strings.authOtpResendQuestion,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
-                ),
+                  TextButton(
+                    onPressed: widget.onResend == null || _isResending
+                        ? null
+                        : () => _handleResend(strings),
+                    style: TextButton.styleFrom(
+                      foregroundColor: primaryColor,
+                    ),
+                    child: _isResending
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(strings.authOtpResendCta),
+                  ),
+                ],
               ),
               const SizedBox(height: defaultPadding),
-              const Center(
+              Center(
                 child: Text(
-                  "By Signing up you agree to our Terms \nConditions & Privacy Policy.",
+                  strings.authOtpTerms,
                   textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
               const SizedBox(height: defaultPadding),
@@ -110,14 +167,4 @@ class NumberVerifyScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-String _buildDefaultSubtitle(String phoneLabel, String? demoCode) {
-  final buffer = StringBuffer(
-    'Enter the 4-digit code sent to $phoneLabel.',
-  );
-  if (demoCode != null && demoCode.isNotEmpty) {
-    buffer.write('\nUse code $demoCode to continue.');
-  }
-  return buffer.toString();
 }

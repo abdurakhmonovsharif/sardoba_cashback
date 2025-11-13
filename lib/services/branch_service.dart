@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
+import '../config/app_config.dart';
 import '../models/branch.dart';
 
 class BranchService {
@@ -9,12 +10,11 @@ class BranchService {
     Dio? dio,
     String? baseUrl,
     String? branchesPath,
-  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? _defaultBaseUrl)),
+  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
         _ownsDio = dio == null,
-        _baseUrl = baseUrl ?? _defaultBaseUrl,
+        _baseUrl = baseUrl ?? AppConfig.apiBaseUrl,
         _branchesPath = branchesPath ?? _defaultBranchesPath;
 
-  static const String _defaultBaseUrl = 'https://api.example.com';
   static const String _defaultBranchesPath = '/branches';
 
   final Dio _dio;

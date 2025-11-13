@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../constants.dart';
 import '../../services/auth_storage.dart';
+import '../../utils/snackbar_utils.dart';
 import '../pin/components/pin_widgets.dart';
 
 class ChangePinScreen extends StatefulWidget {
@@ -107,11 +108,9 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     setState(() => _isBusy = true);
     await AuthStorage.instance.savePin(_input);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('PIN updated'),
-        behavior: SnackBarBehavior.floating,
-      ),
+    showNavAwareSnackBar(
+      context,
+      content: const Text('PIN updated'),
     );
     Navigator.of(context).pop();
   }

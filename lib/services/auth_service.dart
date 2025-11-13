@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 
+import '../config/app_config.dart';
 import '../models/account.dart';
 import '../models/cashback_entry.dart';
 import '../models/loyalty_summary.dart';
@@ -11,10 +12,10 @@ class AuthService {
   AuthService({
     Dio? dio,
     String? baseUrl,
-  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? _defaultBaseUrl)),
+  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
         _ownsDio = dio == null;
 
-  static const String _defaultBaseUrl = 'http://185.217.131.110:8000';
+  static const String _requestOtpPath = '/api/v1/auth/client/request-otp';
   static const String _verifyOtpPath = '/api/v1/auth/client/verify-otp';
   static const String _profilePath = '/api/v1/auth/me';
   static const String _refreshPath = '/api/v1/auth/refresh';
@@ -23,6 +24,28 @@ class AuthService {
 
   final Dio _dio;
   final bool _ownsDio;
+
+  Future<void> requestOtp({
+    required String phone,
+    String purpose = 'login',
+  }) async {
+    final normalizedPhone = _normalizePhone(phone);
+    try {
+      await _dio.post(
+        _requestOtpPath,
+        data: {
+          'phone': normalizedPhone,
+          'purpose': purpose,
+        },
+      );
+    } on DioException catch (error) {
+      final status = error.response?.statusCode;
+      final details = status != null
+          ? 'Request failed with status $status.'
+          : (error.message ?? 'Request failed.');
+      throw AuthServiceException('Failed to request code. $details');
+    }
+  }
 
   Future<AuthSession> verifyOtp({
     required String phone,

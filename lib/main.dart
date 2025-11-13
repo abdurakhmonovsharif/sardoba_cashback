@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'app_language.dart';
 import 'app_localizations.dart';
@@ -15,8 +16,17 @@ import 'services/auth_storage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _loadEnv();
   await AuthStorage.instance.ensureInitialized();
   runApp(const MyApp());
+}
+
+Future<void> _loadEnv() async {
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (error) {
+    debugPrint('⚠️ Failed to load .env file: $error');
+  }
 }
 
 class MyApp extends StatefulWidget {
